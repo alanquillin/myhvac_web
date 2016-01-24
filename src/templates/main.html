@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block extra_scripts %}
+        <script src="{{ url_for('static', filename='js/lib/raphael-2.1.4.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/lib/justgage.js') }}"></script>
+{% endblock %}
+{% block extra_scripts_end %}
+    <script src="{{ url_for('static', filename='js/lib/raphael-2.1.4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lib/justgage.js') }}"></script>
+{% endblock %}
+{% block content_title %}My HVAC Dashboard{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Rooms</div>
+                    <div class="panel-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Room</th>
+                                    <th>Temp</th>
+                                    <th>&nbsp;</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Room 1</td>
+                                    <td>70&deg;</td>
+                                    <td><button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
+                                            <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+                                        </button></td>
+                                </tr>
+                                <tr>
+                                    <td>Room 2</td>
+                                    <td>73&deg;</td>
+                                    <td><button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
+                                            <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+                                        </button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Current Temp / Status</div>
+                    <div class="panel-body">
+                        <div id="gauge" class="200x160px"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+          </div>
+          <div class="modal-body">
+            ...
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary">Save changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            var g = new JustGage({
+                id: 'gauge',
+                value: 71.5,
+                min: 30,
+                max: 100,
+                title: "Aggregate Temp",
+                levelColors: ['#c1e2b3', '#2b542c'],
+                //levelColors: ['#3c763d', '#2b542c', '#dff0d8', '#c1e2b3', '#d0e9c6'],
+                symbol: '° F',
+                shadowOpacity: .2,
+                startAnimationTime: 1000,
+                startAnimationType: 'bounce',
+                refreshAnimationType: 'bounce',
+                decimals: 1,
+                gaugeWidthScale:.5
+            });
+        });
+
+    </script>
+{% endblock %}
