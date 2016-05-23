@@ -16,6 +16,7 @@
                 <div class="panel panel-primary">
                     <div class="panel-heading">Rooms</div>
                     <div class="panel-body">
+                        <h3>Active Rooms</h3>
                         <table class="table table-striped">
                             <thead>
                                 <tr>
@@ -25,20 +26,36 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                {%  for room in active_rooms %}
                                 <tr>
-                                    <td>Room 1</td>
-                                    <td>70&deg;</td>
-                                    <td><button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
+                                    <td>{{ room.get('name') }}</td>
+                                    <td width="50px">{{ room.get('current_temp', 'N/A') }}{{ '&deg;'|safe if room.get('current_temp') else '' }}</td>
+                                    <td width="25px"><button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
                                             <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
                                         </button></td>
                                 </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <h3>Inactive Rooms</h3>
+                        <table class="table table-striped">
+                            <thead>
                                 <tr>
-                                    <td>Room 2</td>
-                                    <td>73&deg;</td>
-                                    <td><button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
+                                    <th>Room</th>
+                                    <th>Temp</th>
+                                    <th>&nbsp;</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {%  for room in inactive_rooms %}
+                                <tr>
+                                    <td>{{ room.get('name') }}</td>
+                                    <td width="50px">{{ room.get('current_temp', 'N/A') }}{{ '&deg;'|safe if room.get('current_temp') else '' }}</td>
+                                    <td width="25px"><button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
                                             <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
                                         </button></td>
                                 </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -78,7 +95,7 @@
         $(document).ready(function(){
             var g = new JustGage({
                 id: 'gauge',
-                value: 71.5,
+                value: {{ current_temp }},
                 min: 30,
                 max: 100,
                 title: "Aggregate Temp",
