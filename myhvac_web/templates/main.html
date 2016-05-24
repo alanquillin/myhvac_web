@@ -14,51 +14,91 @@
         <div class="row">
             <div class="col-md-8">
                 <div class="panel panel-primary">
-                    <div class="panel-heading">Rooms</div>
-                    <div class="panel-body">
-                        <h3>Active Rooms</h3>
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Room</th>
-                                    <th>Temp</th>
-                                    <th>&nbsp;</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {%  for room in active_rooms %}
-                                <tr>
-                                    <td>{{ room.get('name') }}</td>
-                                    <td width="50px">{{ room.get('current_temp', 'N/A') }}{{ '&deg;'|safe if room.get('current_temp') else '' }}</td>
-                                    <td width="25px"><button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
-                                            <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
-                                        </button></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        <h3>Inactive Rooms</h3>
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Room</th>
-                                    <th>Temp</th>
-                                    <th>&nbsp;</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {%  for room in inactive_rooms %}
-                                <tr>
-                                    <td>{{ room.get('name') }}</td>
-                                    <td width="50px">{{ room.get('current_temp', 'N/A') }}{{ '&deg;'|safe if room.get('current_temp') else '' }}</td>
-                                    <td width="25px"><button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
-                                            <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
-                                        </button></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    <div class="panel-heading">Active Rooms</div>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Room</th>
+                                <th>Temp</th>
+                                <th>Rec Date</th>
+                                <th>&nbsp;</th>
+                                <th>&nbsp;</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {%  for room in active_rooms %}
+                            <tr>
+                                <td>{{ room.get('name') }}</td>
+                                <td width="20px">
+                                    {% if room.get('current_temp') %}
+                                        {{ room.get('current_temp') }}&deg;
+                                    {% else %}
+                                        <p class="text-muted"><em>N/A</em></p>
+                                    {% endif %}
+                                </td>
+                                <td width="140px">
+                                    {% if room.get('current_temp_recorded_date') and room.get('current_temp_recorded_time') %}
+                                        {{ room.get('current_temp_recorded_time', '').replace(' ', '&nbsp;')|safe }}
+                                        <br/>
+                                        {{ room.get('current_temp_recorded_date')  }}
+                                    {% endif %}
+                                </td>
+                                <td width="10px">
+                                    <button type="button" class="btn btn-default btn-xs" onclick="viewRoomTempHistory('{{ room['id'] }}')">
+                                        <span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span>
+                                    </button>
+                                </td>
+                                <td width="10px">
+                                    <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
+                                        <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                 <div class="panel panel-warning">
+                    <div class="panel-heading">Inactive Rooms</div>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Room</th>
+                                <th>Temp</th>
+                                <th>Rec Date</th>
+                                <th>&nbsp;</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {%  for room in inactive_rooms %}
+                            <tr>
+                                <td>{{ room.get('name') }}</td>
+                                <td width="20px">
+                                    {% if room.get('current_temp') %}
+                                        {{ room.get('current_temp') }}&deg;
+                                    {% else %}
+                                        <p class="text-muted"><em>N/A</em></p>
+                                    {% endif %}
+                                </td>
+                                <td width="140px">
+                                    {% if room.get('current_temp_recorded_date') and room.get('current_temp_recorded_time') %}
+                                        {{ room.get('current_temp_recorded_time', '').replace(' ', '&nbsp;')|safe }}
+                                        <br/>
+                                        {{ room.get('current_temp_recorded_date')  }}
+                                    {% endif %}
+                                </td>
+                                <td width="10px">
+                                    <button type="button" class="btn btn-default btn-xs" onclick="viewRoomTempHistory('{{ room['id'] }}')">
+                                        <span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span>
+                                    </button>
+                                </td>
+                                <td width="10px"><button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
+                                        <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+                                    </button></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="col-md-4">
@@ -91,11 +131,29 @@
       </div>
     </div>
 
+    <div class="modal fade" id='roomTempHistory' tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="exampleModalLabel">Temperature History</h4>
+          </div>
+          <div class="modal-body">
+            <div id="loadingRoomTempHistory">
+                Loading...
+            </div>
+            <div id="roomTempHistoryBody"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
     <script>
         $(document).ready(function(){
             var g = new JustGage({
                 id: 'gauge',
-                value: {{ current_temp }},
+                value: {{ "%.2f" % current_temp }},
                 min: 30,
                 max: 100,
                 title: "Aggregate Temp",
@@ -111,5 +169,17 @@
             });
         });
 
+        function viewRoomTempHistory(room_id){
+            var loadingDiv = $('#loadingRoomTempHistory');
+            var tempHistoryBodyDiv = $('#roomTempHistoryBody');
+
+            loadingDiv.show();
+            tempHistoryBodyDiv.hide();
+            $('#roomTempHistory').modal('show');
+            tempHistoryBodyDiv.load('/rooms/' + room_id + '/temp_history', function(){
+                loadingDiv.hide();
+                tempHistoryBodyDiv.show();
+            });
+        }
     </script>
 {% endblock %}

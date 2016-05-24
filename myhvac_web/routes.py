@@ -4,6 +4,7 @@ from myhvac_core.db import api as db
 from myhvac_core.db import models
 from app import app
 
+from datetime import datetime, timedelta
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -47,6 +48,7 @@ def index():
                 temp_agg = temp_agg + temp
                 temp_cnt = temp_cnt + 1
 
+        current_temp = 0
         if temp_agg > 0 and temp_cnt > 0:
             current_temp = temp_agg / temp_cnt
 
@@ -58,40 +60,75 @@ def index():
 
 
 def _parse_room(session, room_model):
-    room = dict(name=room_model.name, id=room_model.id, active=room_model.active)
+    room = dict(name=room_model.name,
+                id=room_model.id,
+                active=room_model.active)
 
     if room_model.sensors:
-        LOG.debug('Room: %s, %s, %s', room_model.id, room_model.name, room_model.active)
         sensors = []
         measurement_agg = 0
         measurement_cnt = 0
+        current_temp_recorded_date = None
 
         for sensor_model in room_model.sensors:
-            LOG.debug('\t\tSensor: %s, %s, %s, %s, %s', sensor_model.id, sensor_model.name,
-                      sensor_model.manufacturer_id, sensor_model.sensor_type.model, sensor_model.sensor_type.manufacturer)
-            sensor = dict(id=sensor_model.id, name=sensor_model.name, manufacturer_id=sensor_model.manufacturer_id,
-                          model=sensor_model.sensor_type.model, manufacturer=sensor_model.sensor_type.manufacturer)
+            sensor = dict(id=sensor_model.id,
+                          name=sensor_model.name,
+                          manufacturer_id=sensor_model.manufacturer_id,
+                          model=sensor_model.sensor_type.model,
+                          manufacturer=sensor_model.sensor_type.manufacturer)
 
-            measurements = db.get_sensor_temperatures(session, sensor_id=sensor_model.id, order_desc=True, limit=1,
-                                                      order_by=models.Measurement.recorded_date)
-            if measurements:
-                LOG.debug('Measurement list length: %s', len(measurements))
-                m = measurements[-1]
-                LOG.debug('\t\t\tMeasurement: %s, %s', m.measurement, m.recorded_date)
-                measurement_agg = measurement_agg + m.measurement
-                measurement_cnt = measurement_cnt + 1
-                sensor['current_temp'] = m.measurement
-                sensor['last_temp_recorded_date'] = m.recorded_date
+            measurement = db.get_most_recent_sensor_temperature(session,
+                                                                sensor_id=sensor_model.id,
+                                                                order_desc=True,
+                                                                order_by=models.Measurement.recorded_date)
+            if measurement and measurement.recorded_date > datetime.now() - timedelta(minutes=12):
+                measurement_agg = measurement_agg + (measurement.measurement * room_model.weight)
+                measurement_cnt = measurement_cnt + room_model.weight
+                sensor['current_temp'] = measurement.measurement
+                sensor['last_temp_recorded_date'] = measurement.recorded_date
+
+                if not current_temp_recorded_date or measurement.recorded_date > current_temp_recorded_date:
+                    current_temp_recorded_date = measurement.recorded_date
 
             sensors.append(sensor)
 
         if measurement_cnt > 0 and measurement_agg > 0:
             room['current_temp'] = measurement_agg / measurement_cnt
 
-
         room['sensors'] = sensors
+        if current_temp_recorded_date:
+            room['current_temp_recorded_date'] = current_temp_recorded_date.strftime('%A, %m/%d/%y')
+            room['current_temp_recorded_time'] = current_temp_recorded_date.strftime('%I:%M:%S %p')
     return room
 
-@app.route('/room/<room>')
-def getRoomDetails(room):
-    return 'Details for room: %s' % room
+
+@app.route('/rooms/<room_id>/temp_history')
+def get_room_temp_history(room_id):
+    def do(session):
+        room_model = db.get_room_by_id(session, room_id)
+        sensors = []
+
+        if room_model:
+            for sensor_model in room_model.sensors:
+                sensor = dict(name=sensor_model.name,
+                              manufacturer_id=sensor_model.manufacturer_id)
+                history = []
+                measurement_models = db.get_sensor_temperatures(session,
+                                                                sensor_id=sensor_model.id,
+                                                                limit=10,
+                                                                order_desc=True,
+                                                                order_by=models.Measurement.recorded_date)
+
+                for measurement_model in measurement_models:
+                    h = dict(temp=measurement_model.measurement,
+                             recorded_date=measurement_model.recorded_date,
+                             sensor_id=measurement_model.sensor_id)
+                    history.append(h)
+
+                sensor['temp_history'] = history
+                sensors.append(sensor)
+
+        return render_template('temp_history.html',
+                               sensors=sensors)
+
+    return sessionize(do)
