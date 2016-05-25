@@ -1,6 +1,7 @@
 from app import app
 
 import routes
+import rest
 
 from myhvac_core import cfg
 from myhvac_core.db import api as db

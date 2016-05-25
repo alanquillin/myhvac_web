@@ -1,0 +1,54 @@
+.icon-blue,
+.icon-active:hover {
+    color: #337ab7;
+    cursor: pointer;
+}
+
+.icon-grey,
+.icon-disabled{
+    color:grey;
+}
+
+.icon-spin{
+    -webkit-animation:spin .75s linear infinite;
+    -moz-animation:spin .75s linear infinite;
+    animation:spin .75s linear infinite;
+}
+@-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
+@-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
+@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+
+.pgGrid tfoot i,
+.pgSearchAhead li.search_footer i {
+    margin: 0 2px;
+}
+
+.pgGrid tfoot span,
+.pgSearchAhead li.search_footer span {
+    padding: 0 2px;
+}
+
+.page-size-selector {
+    margin: 2px 8px;
+    padding: 0px;
+    width: 45px;
+    height: 22px;
+    font-size: 11px;
+}
+.pgGrid thead td{
+    font-weight: bold;
+}
+
+.pgGrid thead td .glyphicon,
+.pgGrid thead td [class*=" glyphicon-"],
+.pgGrid thead td [class*=" glyphicon-"] {
+    width: 16px;
+    height: 16px;
+    float: right;
+}
+
+.pgGrid thead td.sortable:hover{
+    text-decoration: underline;
+    color: #006dcc;
+    cursor: pointer;
+}

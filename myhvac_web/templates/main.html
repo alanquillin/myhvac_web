@@ -1,12 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
+{% block extra_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pgGrid.bundle.css') }}">
+{% endblock %}
 {% block extra_scripts %}
         <script src="{{ url_for('static', filename='js/lib/raphael-2.1.4.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/lib/justgage.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/lib/pgGrid.min.js') }}"></script>
 {% endblock %}
 {% block extra_scripts_end %}
     <script src="{{ url_for('static', filename='js/lib/raphael-2.1.4.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/lib/justgage.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lib/pgGrid.js') }}"></script>
 {% endblock %}
 {% block content_title %}My HVAC Dashboard{% endblock %}
 {% block content %}
@@ -135,14 +140,11 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="exampleModalLabel">Temperature History</h4>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="exampleModalLabel">Temperature History</h4>
           </div>
           <div class="modal-body">
-            <div id="loadingRoomTempHistory">
-                Loading...
-            </div>
-            <div id="roomTempHistoryBody"></div>
+            <div id="roomTempHistoryGrid"></div>
           </div>
         </div>
       </div>
@@ -169,17 +171,22 @@
             });
         });
 
+        var g;
         function viewRoomTempHistory(room_id){
-            var loadingDiv = $('#loadingRoomTempHistory');
-            var tempHistoryBodyDiv = $('#roomTempHistoryBody');
-
-            loadingDiv.show();
-            tempHistoryBodyDiv.hide();
             $('#roomTempHistory').modal('show');
-            tempHistoryBodyDiv.load('/rooms/' + room_id + '/temp_history', function(){
-                loadingDiv.hide();
-                tempHistoryBodyDiv.show();
-            });
+            var grid = $('#roomTempHistoryGrid');
+            grid.empty();
+            grid.pgGrid({
+                url: '/api/rooms/' + room_id + '/temp_history',
+                dataModel: [
+                    { name: 'Temp', index: 'temp', sortable: false},
+                    { name: 'Recorded Date', index: 'recorded_date'}
+                ],
+                title: '',
+                dataItemIndex: 'measurements',
+                sortColumn: 'recorded_date',
+                sortDirection: 'DESC'
+            }, true);
         }
     </script>
 {% endblock %}

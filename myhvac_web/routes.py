@@ -81,6 +81,7 @@ def _parse_room(session, room_model):
                                                                 sensor_id=sensor_model.id,
                                                                 order_desc=True,
                                                                 order_by=models.Measurement.recorded_date)
+
             if measurement and measurement.recorded_date > datetime.now() - timedelta(minutes=12):
                 measurement_agg = measurement_agg + (measurement.measurement * room_model.weight)
                 measurement_cnt = measurement_cnt + room_model.weight
@@ -100,35 +101,3 @@ def _parse_room(session, room_model):
             room['current_temp_recorded_date'] = current_temp_recorded_date.strftime('%A, %m/%d/%y')
             room['current_temp_recorded_time'] = current_temp_recorded_date.strftime('%I:%M:%S %p')
     return room
-
-
-@app.route('/rooms/<room_id>/temp_history')
-def get_room_temp_history(room_id):
-    def do(session):
-        room_model = db.get_room_by_id(session, room_id)
-        sensors = []
-
-        if room_model:
-            for sensor_model in room_model.sensors:
-                sensor = dict(name=sensor_model.name,
-                              manufacturer_id=sensor_model.manufacturer_id)
-                history = []
-                measurement_models = db.get_sensor_temperatures(session,
-                                                                sensor_id=sensor_model.id,
-                                                                limit=10,
-                                                                order_desc=True,
-                                                                order_by=models.Measurement.recorded_date)
-
-                for measurement_model in measurement_models:
-                    h = dict(temp=measurement_model.measurement,
-                             recorded_date=measurement_model.recorded_date,
-                             sensor_id=measurement_model.sensor_id)
-                    history.append(h)
-
-                sensor['temp_history'] = history
-                sensors.append(sensor)
-
-        return render_template('temp_history.html',
-                               sensors=sensors)
-
-    return sessionize(do)
