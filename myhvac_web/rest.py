@@ -6,25 +6,8 @@ from myhvac_core.db import models
 from app import app
 
 import logging
-import time
 
 LOG = logging.getLogger(__name__)
-
-
-def sessionize(f, *args, **kwargs):
-    session = db.Session()
-
-    ret = None
-    try:
-        ret = f(session, *args, **kwargs)
-        session.commit()
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-    return ret
 
 
 @app.route('/api/rooms/<room_id>/temp_history')
@@ -66,4 +49,4 @@ def get_room_temp_history(room_id):
                 # sensor['temp_history'] = history
                 # sensors.append(sensor)
 
-    return sessionize(do)
+    return db.sessionize(do)

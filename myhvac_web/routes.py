@@ -10,22 +10,6 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
-def sessionize(f, *args, **kwargs):
-    session = db.Session()
-
-    ret = None
-    try:
-        ret = f(session, *args, **kwargs)
-        session.commit()
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-    return ret
-
-
 @app.route('/')
 def index():
     def do(session):
@@ -56,7 +40,7 @@ def index():
                                active_rooms=active_rooms,
                                inactive_rooms=inactive_rooms,
                                current_temp=current_temp)
-    return sessionize(do)
+    return db.sessionize(do)
 
 
 def _parse_room(session, room_model):
