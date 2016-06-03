@@ -9,6 +9,7 @@
     color:grey;
 }
 
+.glyphicon-spin,
 .icon-spin{
     -webkit-animation:spin .75s linear infinite;
     -moz-animation:spin .75s linear infinite;

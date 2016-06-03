@@ -1,0 +1,107 @@
+{% macro rooms_list(rooms, active) -%}
+<div class="panel {{ 'panel-primary' if active else 'panel-warning' }}">
+    <div class="panel-heading">{{ 'Active' if active else 'Inactive' }} Rooms</div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Room</th>
+                <th>Temp</th>
+                <th>Rec Date</th>
+                <th>&nbsp;</th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
+        <tbody>
+            {%  for room in rooms %}
+            <tr>
+                <td>{{ room.get('name') }}</td>
+                <td width="20px">
+                    {% if room.get('current_temp') %}
+                        {{ room.get('current_temp') }}&deg;
+                    {% else %}
+                        <p class="text-muted"><em>N/A</em></p>
+                    {% endif %}
+                </td>
+                <td width="160px">
+                    {% if room.get('current_temp_recorded_date') and room.get('current_temp_recorded_time') %}
+                        {{ room.get('current_temp_recorded_time', '').replace(' ', '&nbsp;')|safe }}
+                        <br/>
+                        {{ room.get('current_temp_recorded_date')  }}
+                    {% endif %}
+                </td>
+                <td width="10px">
+                    <button type="button" class="btn btn-default btn-xs" onclick="viewRoomTempHistory('{{ room['id'] }}')">
+                        <span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span>
+                    </button>
+                </td>
+                <td width="10px">
+                    <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
+                        <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{%- endmacro %}
+
+{% macro modals() -%}
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+      </div>
+      <div class="modal-body">
+        ...
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id='roomTempHistory' tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="exampleModalLabel">Temperature History</h4>
+      </div>
+      <div class="modal-body">
+        <div id="roomTempHistoryGrid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro scripts(include_script_block=False) -%}
+    {% if include_script_block %}
+    <script>
+    {% endif %}
+    var g;
+    function viewRoomTempHistory(room_id){
+        $('#roomTempHistory').modal('show');
+        var grid = $('#roomTempHistoryGrid');
+        grid.empty();
+        grid.pgGrid({
+            url: '/api/rooms/' + room_id + '/temp_history',
+            dataModel: [
+                { name: 'Temp', index: 'temp', sortable: false},
+                { name: 'Recorded Date', index: 'recorded_date'}
+            ],
+            title: '',
+            dataItemIndex: 'measurements',
+            sortColumn: 'recorded_date',
+            sortDirection: 'DESC'
+        }, true);
+    }
+    {% if include_script_block %}
+    </script>
+    {% endif %}
+{%- endmacro  %}

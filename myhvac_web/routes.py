@@ -11,7 +11,7 @@ LOG = logging.getLogger(__name__)
 
 
 @app.route('/')
-def index():
+def dashboard():
     def do(session):
         rooms = db.get_rooms_dashboard(session)
 
@@ -24,22 +24,9 @@ def index():
             else:
                 inactive_rooms.append(room)
 
-        temp_agg = 0
-        temp_cnt = 0
-        for room in active_rooms:
-            temp = room.get('current_temp')
-            if temp:
-                temp_agg = temp_agg + temp
-                temp_cnt = temp_cnt + 1
-
-        current_temp = 0
-        if temp_agg > 0 and temp_cnt > 0:
-            current_temp = temp_agg / temp_cnt
-
-        return render_template('main.html',
+        return render_template('dashboard.html',
                                active_rooms=active_rooms,
-                               inactive_rooms=inactive_rooms,
-                               current_temp=current_temp)
+                               inactive_rooms=inactive_rooms)
     return db.sessionize(do)
 
 

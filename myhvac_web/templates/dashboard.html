@@ -1,0 +1,38 @@
+{% import 'partials/rooms.html' as rooms_view %}
+{% import 'partials/system_details.html' as system_details_view %}
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block extra_styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pgGrid.bundle.css') }}">
+{% endblock %}
+{% block extra_scripts %}
+        <script src="{{ url_for('static', filename='js/lib/raphael-2.1.4.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/lib/justgage.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/lib/pgGrid.min.js') }}"></script>
+{% endblock %}
+{% block extra_scripts_end %}
+    <script src="{{ url_for('static', filename='js/lib/raphael-2.1.4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lib/justgage.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lib/pgGrid.js') }}"></script>
+{% endblock %}
+{% block content_title %}My HVAC Dashboard{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                {{ rooms_view.rooms_list(active_rooms, True) }}
+                {{ rooms_view.rooms_list(inactive_rooms, False) }}
+            </div>
+            <div class="col-md-4">
+                {{ system_details_view.details(system_status) }}
+            </div>
+        </div>
+    </div>
+
+    {{ rooms_view.modals() }}
+
+    <script>
+        {{ system_details_view.scripts(current_temp) }}
+        {{ rooms_view.scripts() }}
+    </script>
+{% endblock %}

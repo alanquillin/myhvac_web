@@ -1,0 +1,105 @@
+{% macro details(system_state) -%}
+    <div class="panel panel-primary">
+        <div class="panel-heading">Current Temp / Status</div>
+        <div class="panel-body">
+            <div id="systemDetailsError" class="alert alert-danger" role="alert" style="display: none">
+                OH NO... SOMETHING WENT WRONG...</br>
+                <span id="systemDetailsErrorMessage"></span><br/>
+                Last error on: <span id="systemDetailsErrorTime"></span>
+            </div>
+            <div id="systemDetailsLoading" class="center">
+                    <div class="glyphicon glyphicon-refresh glyphicon-spin" ></div> Loading...
+            </div>
+            <div id="systemDetailsContent" style="display: none">
+                <div id="gauge" class="200x160px"></div>
+                <div>System State: <strong><span id="systemDetailsState"></span></strong> </div>
+                <div>Last Updated: <span id="systemDetailsLastUpdatedTime"></span> </div>
+            </div>
+        </div>
+    </div>
+{%- endmacro  %}
+
+{% macro scripts(current_temp, include_script_block=False) -%}
+    {% if include_script_block %}
+    <script>
+    {% endif %}
+    var timer;
+    var tempGage = null;
+
+    $(document).ready(function(){
+        var jqxhr = updateSystemDetails();
+
+        jqxhr.complete(function(){
+            $('#systemDetailsLoading').hide();
+            $('#systemDetailsContent').show();
+        })
+    });
+
+    function updateSystemDetails(){
+        return $.getJSON('/api/system/details', function(data){
+            $("#systemDetailsContent").show();
+
+            // Hide error message if it was previously visible.
+            var errorMsgElement = $('#systemDetailsError');
+            if(data.error == true){
+                setSystemDetailsErrorMsg(data.error_message);
+                errorMsgElement.show();
+
+                timer = setTimeout(updateSystemDetails, 20000);
+            }
+            else {
+                if(errorMsgElement.is(':visible')){
+                    errorMsgElement.hide();
+                }
+                setTempGage(data.temp);
+                $('#systemDetailsState').text(data.state);
+                var dt = new Date();
+                $('#systemDetailsLastUpdatedTime').text(dt.toLocaleString());
+                timer = setTimeout(updateSystemDetails, 10000);
+            }
+        }).fail(function(jqXHR){
+            if(jqXHR.status>0){
+                setSystemDetailsErrorMsg(jqXHR.statusText + ' (' + jqXHR.status + ')');
+            }
+            else{
+                setSystemDetailsErrorMsg('Unable to connect to the service... Connection refused');
+            }
+            $('#systemDetailsError').show();
+            timer = setTimeout(updateSystemDetails, 25000);
+        });
+    }
+
+    function setSystemDetailsErrorMsg(msg){
+        $('#systemDetailsErrorMessage').text(msg);
+        var dt = new Date();
+        $('#systemDetailsErrorTime').text(dt.toLocaleString());
+    }
+
+    function setTempGage(temp){
+        if(tempGage == null){
+            tempGage = new JustGage({
+                id: 'gauge',
+                value: temp,
+                min: 30,
+                max: 100,
+                title: 'Aggregate Temp',
+                levelColors: ['#c1e2b3', '#2b542c'],
+                //levelColors: ['#3c763d', '#2b542c', '#dff0d8', '#c1e2b3', '#d0e9c6'],
+                symbol: '° F',
+                shadowOpacity: .2,
+                startAnimationTime: 1000,
+                startAnimationType: 'bounce',
+                refreshAnimationType: 'bounce',
+                decimals: 1,
+                gaugeWidthScale:.5
+            });
+        }
+        else{
+            tempGage.refresh(temp);
+        }
+    }
+
+    {% if include_script_block %}
+    </script>
+    {% endif %}
+{%- endmacro  %}
