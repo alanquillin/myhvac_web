@@ -93,8 +93,66 @@ def get_system_details():
         system_state = srvc_api.set_system_state()
 
         if not temp_cnt and not temp_agg:
-            return jsonify(error=True, error_message="No current temperature data found...")
+            return _build_error_resp('No current temperature data found...')
 
         return jsonify(temp=temp_agg/temp_cnt,
                        state=sstate.print_state(system_state))
     return db.sessionize(do)
+
+
+@app.route('/api/rooms')
+def get_rooms():
+    def do(session):
+        room_models = db.get_rooms_dashboard(session)
+        rooms = [_parse_room(session, r) for r in room_models]
+
+        return jsonify(rooms=rooms)
+    return db.sessionize(do)
+
+
+def _build_error_resp(error_msg):
+    return jsonify(error=True, error_message=error_msg)
+
+
+def _parse_room(session, room_model):
+    room = dict(name=room_model.name,
+                id=room_model.id,
+                active=room_model.active)
+
+    if room_model.sensors:
+        sensors = []
+        measurement_agg = 0
+        measurement_cnt = 0
+        current_temp_recorded_date = None
+
+        for sensor_model in room_model.sensors:
+            sensor = dict(id=sensor_model.id,
+                          name=sensor_model.name,
+                          manufacturer_id=sensor_model.manufacturer_id,
+                          model=sensor_model.sensor_type.model,
+                          manufacturer=sensor_model.sensor_type.manufacturer)
+
+            measurement = db.get_most_recent_sensor_temperature(session,
+                                                                sensor_id=sensor_model.id,
+                                                                order_desc=True,
+                                                                order_by=models.Measurement.recorded_date)
+
+            if measurement and measurement.recorded_date > datetime.now() - timedelta(minutes=12):
+                measurement_agg = measurement_agg + (measurement.measurement * room_model.weight)
+                measurement_cnt = measurement_cnt + room_model.weight
+                sensor['current_temp'] = measurement.measurement
+                sensor['last_temp_recorded_date'] = measurement.recorded_date
+
+                if not current_temp_recorded_date or measurement.recorded_date > current_temp_recorded_date:
+                    current_temp_recorded_date = measurement.recorded_date
+
+            sensors.append(sensor)
+
+        if measurement_cnt > 0 and measurement_agg > 0:
+            room['current_temp'] = measurement_agg / measurement_cnt
+
+        room['sensors'] = sensors
+        if current_temp_recorded_date:
+            room['current_temp_recorded_date'] = current_temp_recorded_date.strftime('%A, %m/%d/%y')
+            room['current_temp_recorded_time'] = current_temp_recorded_date.strftime('%I:%M:%S %p')
+    return room

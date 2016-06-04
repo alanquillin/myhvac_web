@@ -20,8 +20,10 @@
     <div class="container">
         <div class="row">
             <div class="col-md-8">
-                {{ rooms_view.rooms_list(active_rooms, True) }}
-                {{ rooms_view.rooms_list(inactive_rooms, False) }}
+                {{ rooms_view.loader() }}
+                {{ rooms_view.error() }}
+                {{ rooms_view.rooms_list(True) }}
+                {{ rooms_view.rooms_list(False) }}
             </div>
             <div class="col-md-4">
                 {{ system_details_view.details(system_status) }}

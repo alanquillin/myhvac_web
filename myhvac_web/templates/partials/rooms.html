@@ -1,46 +1,31 @@
-{% macro rooms_list(rooms, active) -%}
-<div class="panel {{ 'panel-primary' if active else 'panel-warning' }}">
+{% macro loader(rooms, active) -%}
+<div id="roomsListLoading" class="center">
+    <div class="glyphicon glyphicon-refresh glyphicon-spin" ></div> Loading...
+</div>
+{%- endmacro %}
+
+{% macro error(rooms, active) -%}
+<div id="roomsListError" class="alert alert-danger" role="alert" style="display: none">
+    OH NO... SOMETHING WENT WRONG...</br>
+    <span id="roomsListErrorMessage"></span><br/>
+    Last error on: <span id="roomsListErrorTime"></span>
+</div>
+{%- endmacro %}
+
+{% macro rooms_list(active) -%}
+<div id="{{ 'active' if active else 'inactive' }}RoomsListContent" class="panel {{ 'panel-primary' if active else 'panel-warning' }}" style="display: none">
     <div class="panel-heading">{{ 'Active' if active else 'Inactive' }} Rooms</div>
-    <table class="table table-striped">
+    <table class="table table-striped" id="{{ 'active' if active else 'inactive' }}Rooms">
         <thead>
             <tr>
                 <th>Room</th>
                 <th>Temp</th>
                 <th>Rec Date</th>
                 <th>&nbsp;</th>
-                <th>&nbsp;</th>
+                <!--<th>&nbsp;</th>-->
             </tr>
         </thead>
         <tbody>
-            {%  for room in rooms %}
-            <tr>
-                <td>{{ room.get('name') }}</td>
-                <td width="20px">
-                    {% if room.get('current_temp') %}
-                        {{ room.get('current_temp') }}&deg;
-                    {% else %}
-                        <p class="text-muted"><em>N/A</em></p>
-                    {% endif %}
-                </td>
-                <td width="160px">
-                    {% if room.get('current_temp_recorded_date') and room.get('current_temp_recorded_time') %}
-                        {{ room.get('current_temp_recorded_time', '').replace(' ', '&nbsp;')|safe }}
-                        <br/>
-                        {{ room.get('current_temp_recorded_date')  }}
-                    {% endif %}
-                </td>
-                <td width="10px">
-                    <button type="button" class="btn btn-default btn-xs" onclick="viewRoomTempHistory('{{ room['id'] }}')">
-                        <span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span>
-                    </button>
-                </td>
-                <td width="10px">
-                    <button type="button" class="btn btn-default btn-xs" data-toggle="modal" data-target="#myModal">
-                        <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
-                    </button>
-                </td>
-            </tr>
-            {% endfor %}
         </tbody>
     </table>
 </div>
@@ -84,6 +69,16 @@
     {% if include_script_block %}
     <script>
     {% endif %}
+    $(document).ready(function(){
+        var jqxhr = getRoomsData();
+
+        jqxhr.complete(function(){
+            $('#roomsListLoading').hide();
+            $('#activeRoomsListContent').show();
+            $('#inactiveRoomsListContent').show();
+        })
+    });
+
     var g;
     function viewRoomTempHistory(room_id){
         $('#roomTempHistory').modal('show');
@@ -101,6 +96,99 @@
             sortDirection: 'DESC'
         }, true);
     }
+
+    function getRoomsData(){
+        return $.getJSON('/api/rooms', function(data){
+            var errorMsgElement = $('#roomsListError');
+            if(data.error == true){
+                setRoomsListErrorMsg(data.error_message);
+                errorMsgElement.show();
+                timer = setTimeout(getRoomsData, 20000);
+            }
+            else {
+                if(errorMsgElement.is(':visible')){
+                    errorMsgElement.hide();
+                }
+                updateRoomsTables(data);
+                timer = setTimeout(getRoomsData, 10000);
+            }
+        }).fail(function(jqXHR){
+            if(jqXHR.status>0){
+                setRoomsListErrorMsg(jqXHR.statusText + ' (' + jqXHR.status + ')');
+            }
+            else{
+                setRoomsListErrorMsg('Unable to connect to the service... Connection refused');
+            }
+            $('#roomsListError').show();
+            timer = setTimeout(getRoomsData, 25000);
+        });
+    }
+    function updateRoomsTables(data){
+        var $activeRoomsTbl = $('#activeRooms');
+        var $inactiveRoomsTbl = $('#inactiveRooms');
+
+        var $activeRoomTblBody = $activeRoomsTbl.find('tbody');
+        var $inactiveRoomTblBody = $inactiveRoomsTbl.find('tbody');
+        $activeRoomTblBody.empty()
+        $inactiveRoomTblBody.empty()
+
+        for(var i in data.rooms){
+            var room = data.rooms[i];
+            var row = $('<tr></tr>');
+
+            var col = $('<td>'+room.name+'</td>');
+            row.append(col);
+
+            col = $('<td></td>').attr('width', '20px');
+            if(room.hasOwnProperty('current_temp')){
+                col.append(room.current_temp)
+                        .append('&deg;');
+            }
+            else{
+                col.append('<p class="text-muted"><em>N/A</em></p>');
+            }
+            row.append(col);
+
+            col = $('<td></td>').attr('width', '160px');
+            if(room.hasOwnProperty('current_temp_recorded_date') && room.hasOwnProperty('current_temp_recorded_time')){
+                col.append(room.current_temp_recorded_time
+                        .replace(' ', '&nbsp;'))
+                        .append('<br/>')
+                        .append(room.current_temp_recorded_date);
+            }
+            row.append(col);
+
+            col = $('<td></td>').attr('width', '10px');
+            col.append($('<button></button')
+                    .attr('type', 'button')
+                    .addClass('btn btn-default btn-xs')
+                    .attr("onclick", 'viewRoomTempHistory(\''+ room.id +'\')')
+                    .append($('<span></span>')
+                            .addClass('glyphicon glyphicon-list-alt')
+                            .attr('aria-hidden', 'true')));
+            row.append(col);
+
+            //col = $('<td></td>').attr('width', '10px');
+            //col.append($('<button></button')
+            //        .attr('type', 'button')
+            //        .addClass('btn btn-default btn-xs')
+            //        .append($('<span></span>')
+            //                .addClass('glyphicon glyphicon-cog')
+            //                .attr('aria-hidden', 'true')));
+            //row.append(col);
+            if(room.active)
+                $activeRoomTblBody.append(row);
+            else
+                $inactiveRoomTblBody.append(row);
+        }
+    }
+
+    function setRoomsListErrorMsg(msg){
+        $('#roomsListErrorMessage').text(msg);
+        var dt = new Date();
+        $('#roomsListErrorTime').text(dt.toLocaleString());
+    }
+
     {% if include_script_block %}
     </script>
     {% endif %}
