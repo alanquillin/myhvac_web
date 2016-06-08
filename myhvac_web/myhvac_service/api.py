@@ -7,7 +7,7 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
-def set_system_state():
+def get_system_state():
     service = factory.get_service_module()
 
-    return service.set_system_state()
+    return service.get_system_state()

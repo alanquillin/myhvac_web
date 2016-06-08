@@ -13,6 +13,7 @@
             <div id="systemDetailsContent" style="display: none">
                 <div id="gauge" class="200x160px"></div>
                 <div>System State: <strong><span id="systemDetailsState"></span></strong> </div>
+                <div>Program: <strong><span id="systemDetailsProgram"></span></strong> </div>
                 <div>Last Updated: <span id="systemDetailsLastUpdatedTime"></span> </div>
             </div>
         </div>
@@ -48,11 +49,14 @@
                 timer = setTimeout(updateSystemDetails, 20000);
             }
             else {
-                if(errorMsgElement.is(':visible')){
+                if (errorMsgElement.is(':visible')) {
                     errorMsgElement.hide();
                 }
-                setTempGage(data.temp);
+            }
+            if(data.hasOwnProperty('state')){
+                setTempGage(data.current_temp);
                 $('#systemDetailsState').text(data.state);
+                $('#systemDetailsProgram').text(data.program);
                 var dt = new Date();
                 $('#systemDetailsLastUpdatedTime').text(dt.toLocaleString());
                 timer = setTimeout(updateSystemDetails, 10000);

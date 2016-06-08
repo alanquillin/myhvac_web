@@ -29,7 +29,7 @@ def build_resource_url(resource):
     return "%s:%s%s" % (base_url, CONF.myhvac_service_api.port, resource)
 
 
-def set_system_state():
+def get_system_state():
     resource = build_resource_url('/system/state')
 
     LOG.debug('Requesting system state from service: %s', resource)
@@ -41,12 +41,4 @@ def set_system_state():
                   resp.status_code, resp.text)
         return sstate.UNKNOWN
 
-    data = resp.json()
-
-    state_str = data.get('state')
-
-    if not state_str:
-        LOG.error('Invalid system state data found in json response from server.  JSON: %s', data)
-        return sstate.UNKNOWN
-
-    return sstate.system_state_from_str(state_str)
+    return resp.json()

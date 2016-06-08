@@ -5,5 +5,6 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
-def set_system_state():
-    return hvac.get_system_state()
+def get_system_state():
+    rs, es = hvac.get_system_state()
+    return rs
